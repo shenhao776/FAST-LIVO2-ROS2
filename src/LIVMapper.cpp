@@ -534,6 +534,7 @@ void LIVMapper::handleLIO() {
                         &laserCloudWorld->points[i]);
   }
   *pcl_w_wait_pub = *laserCloudWorld;
+  *pcl_wait_save_intensity += *laserCloudWorld;
 
   if (!img_en) publish_frame_world(pubLaserCloudFullRes, vio_manager);
   publish_path(pubPath);
@@ -1212,6 +1213,7 @@ void LIVMapper::publish_frame_world(
             laserCloudWorldRGB->push_back(pointRGB);
         }
       }
+      *pcl_wait_save += *laserCloudWorldRGB;
     } else {
       pub_num++;
     }

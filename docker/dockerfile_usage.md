@@ -21,13 +21,13 @@ Navigate to the directory containing your files and run the build command. Repla
 
 For `x86` arch:
 ```zsh
-cd ~/shared_files/ros2_ws/docker
+cd path_to_docker
 docker build -t my-ros2-image .
 ````
 
-For `arm` arch such as macos silicon:
+For `arm` arch such as macos silicon (testing...):
 ```zsh
-cd ~/shared_files/ros2_ws/docker
+cd path_to_docker
 docker build -f Dockerfile_arm64 -t my-ros2-image .
 ````
 

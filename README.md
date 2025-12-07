@@ -13,6 +13,16 @@ xhost +
 /usr/lib/vino/vino-server
 ```
 
+## Clone
+```zsh
+mkdir -p ~/shared_files/ros2_ws/src
+cd ~/shared_files/ros2_ws/src
+git clone https://github.com/shenhao776/rpg_vikit.git
+git clone https://github.com/shenhao776/FAST-LIVO2-ROS2.git
+# path to dockerfile
+cd ~/shared_files/ros2_ws/src/FAST-LIVO2-ROS2/docker
+```
+
 ## Run ros2 docker images
 For details, refer to the separate guide. 
 * **Link**: [Dockerfile Usage Reference](./docker/dockerfile_usage.md)
@@ -22,13 +32,12 @@ For details, refer to the separate guide.
 # enter the docker container
 docker exec -it contain_id zsh
 # ros2 build
-cd /root/shared_files/ros2_ws/src
-git clone https://github.com/shenhao776/rpg_vikit.git
-git clone https://github.com/shenhao776/FAST-LIVO2-ROS2.git
-cd ..
+cd /root/shared_files/ros2_ws/
 colcon build --symlink-install
-source install/setup.zsh
 ```
+
+## Test dataset
+* **Link**: [LIVO Dataset](https://drive.google.com/drive/folders/19M28jNN79I75yDOFhX4jN3qAqxNV0MqE?usp=drive_link)
 
 ## Integrated launch
 ```zsh
