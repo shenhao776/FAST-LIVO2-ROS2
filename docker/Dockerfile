@@ -1,0 +1,98 @@
+FROM osrf/ros:humble-desktop-full
+
+# set zone to Asia/Tokyo
+ENV TZ=Asia/Tokyo
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# apt packages
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    python3-serial \
+    ros-humble-tf-transformations \
+    vim \
+    iputils-ping \
+    net-tools \
+    zsh \
+    wget \
+    libpcap-dev \
+    ros-humble-pointcloud-to-laserscan \
+    ros-humble-navigation2 \
+    ros-humble-nav2-bringup \
+    ros-humble-pcl-conversions \
+    ros-humble-pcl-ros \
+    ros-humble-rqt-image-view \
+    'ros-humble-turtlebot3*' \
+    'ros-humble-librealsense2*' \
+    'ros-humble-realsense2-*' \
+    ros-humble-image-view \
+    ros-humble-sophus \
+    # --- START: ADDED FOR DOCKER-OUT-OF-DOCKER ---
+    # Add dependencies for installing Docker CLI
+    ca-certificates \
+    curl \
+    gnupg \
+    # --- END: ADDED FOR DOCKER-OUT-OF-DOCKER ---
+    && rm -rf /var/lib/apt/lists/*
+
+# --- START: ADDED FOR DOCKER-OUT-OF-DOCKER ---
+# This block adds the official Docker repository and installs the CLI client.
+RUN install -m 0755 -d /etc/apt/keyrings
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+RUN chmod a+r /etc/apt/keyrings/docker.gpg
+RUN echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+    tee /etc/apt/sources.list.d/docker.list > /dev/null
+RUN apt-get update && apt-get install -y docker-ce-cli && rm -rf /var/lib/apt/lists/*
+# --- END: ADDED FOR DOCKER-OUT-OF-DOCKER ---
+
+# install Python
+COPY requirements.txt .
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# compile Livox-SDK2 and setup zsh
+RUN git clone https://github.com/Livox-SDK/Livox-SDK2.git && \
+    cd Livox-SDK2 && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j$(nproc) && \
+    make install && \
+    cd ../.. && \
+    rm -rf Livox-SDK2 && \
+    wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh && \
+    sh install.sh && \
+    rm install.sh && \
+    git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions && \
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+
+# Comment out the conflicting line in rosidl-argcomplete.zsh
+RUN sed -i 's/^autoload -U +X compinit && compinit/# &/' /opt/ros/humble/share/rosidl_cli/environment/rosidl-argcomplete.zsh
+
+# Modify .zshrc plugins line
+RUN sed -i 's/^plugins=(git)$/plugins=(git zsh-syntax-highlighting zsh-autosuggestions)/' ~/.zshrc
+# Modify ZSH_THEME line
+RUN sed -i 's/^ZSH_THEME="robbyrussell"$/ZSH_THEME="ys"/' ~/.zshrc
+
+# workspace
+WORKDIR /root/shared_files
+# --- START: ADDED FOR Livox Driver ---
+# Clone and build the livox_ros_driver2. This is a third-party dependency.
+RUN /bin/zsh -c "source /opt/ros/humble/setup.zsh && \
+    mkdir -p /root/thirdparty_ws/src && \
+    cd /root/thirdparty_ws/src && \
+    git clone https://github.com/shenhao776/livox_ros_driver2.git && \
+    cd livox_ros_driver2 && \
+    ./build.sh humble"
+# --- END: ADDED FOR Livox Driver ---
+
+# add LD_LIBRARY_PATH to .zshrc
+RUN echo 'export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib' >> ~/.zshrc && \
+    echo 'source /opt/ros/humble/setup.zsh' >> ~/.zshrc && \
+    echo 'source /root/thirdparty_ws/install/setup.zsh' >> ~/.zshrc && \
+    echo 'source ~/shared_files/ros2_ws/install/setup.zsh' >> ~/.zshrc && \
+    echo '# TURTLEBOT3_MODEL' >> ~/.zshrc && \
+    echo 'export TURTLEBOT3_MODEL=waffle' >> ~/.zshrc
+
+# entrance point
+CMD ["zsh"]

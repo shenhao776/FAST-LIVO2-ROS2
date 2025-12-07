@@ -1,0 +1,104 @@
+map_updater:
+  ros__parameters:
+    common:
+      # img_topic: "/synced_image"
+      # lid_topic: "/synced_lidar"
+      img_topic: "/camera/camera/color/image_raw"
+      lid_topic: "/livox/lidar"
+      imu_topic: "/livox/imu"
+      img_en: 0
+      lidar_en: 1
+      ros_driver_bug_fix: false
+
+    extrin_calib:
+      # T_imu_lidar: lidar to imu
+      Ril: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+      Pil: [-0.011, -0.02329, 0.04412]
+
+      # T_camera_lidar: lidar to camera
+      # 右手系，相机Y轴旋转-90度，x轴旋转90度得到雷达到相机的变换矩阵
+      Rcl: [-0.00396865, -0.99998757, -0.00301776,
+            0.00356525, 0.00300362, -0.99998913,
+            0.99998577,-0.00397937, 0.00355329] 
+      # 雷达到相机的平移，代表雷达坐标原点相对于相机坐标系的坐标
+      Pcl: [-0.01998498, -0.07459987, -0.0380765]   
+
+    time_offset:
+      imu_time_offset: 0.0
+      img_time_offset: 0.1
+      exposure_time_init: 0.0
+
+    preprocess:
+      point_filter_num: 1
+      filter_size_surf: 0.1
+      lidar_type: 1 # Livox Avia LiDAR
+      scan_line: 4
+      blind: 0.5
+
+    vio:
+      max_iterations: 5
+      outlier_threshold: 1000.0
+      img_point_cov: 100.0
+      patch_size: 8
+      patch_pyrimid_level: 4
+      normal_en: true
+      raycast_en: false
+      inverse_composition_en: false
+      exposure_estimate_en: true
+      inv_expo_cov: 0.1
+
+    imu:
+      imu_en: true
+      imu_int_frame: 30
+      acc_cov: 0.8
+      gyr_cov: 0.5
+      b_acc_cov: 0.001
+      b_gyr_cov: 0.001
+
+    lio:
+      max_iterations: 5
+      dept_err: 0.02
+      beam_err: 0.15
+      min_eigen_value: 0.005
+      voxel_size: 0.5
+      max_layer: 2
+      max_points_num: 50
+      layer_init_num: [5, 5, 5, 5, 5]
+
+    local_map:  
+      map_sliding_en: false
+      half_map_size: 100
+      sliding_thresh: 8.0
+
+    uav:
+      imu_rate_odom: false
+      gravity_align_en: false
+
+    publish:
+      dense_map_en: false
+      pub_effect_point_en: false 
+      pub_plane_en: false
+      pub_scan_num: 1
+      blind_rgb_points: 0.0
+
+    evo:
+      seq_name: "ishiguro_lab_odom"
+      pose_output_en: true
+
+    pcd_save:
+      save_all_pcd_en: true
+      save_all_img_en: true
+      # 这是唯一的地图数据路径，用于建图、加载和更新,如果无定位文件则建图，有定位文件则加载和更新
+      map_data_path: "/root/shared_files/dataset/my_map_data" 
+      colmap_output_en: false
+      # 机器人移动多少距离后保存一次pcd文件，单位：米
+      pcd_save_distance_thresh: 0.2
+      filter_size_pcd: 0.1
+      interval: -1 
+
+
+    auto_mode:
+      # 设置为 true 来启用自动保存并退出的功能
+      enabled: false
+      # 在没有新消息多少秒后，触发自动保存 (单位：秒)
+      message_timeout: 5.0

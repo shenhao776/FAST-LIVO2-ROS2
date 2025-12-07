@@ -1,4 +1,4 @@
-/* 
+/*
 This file is part of FAST-LIVO2: Fast, Direct LiDAR-Inertial-Visual Odometry.
 
 Developer: Chunran Zheng <zhengcr@connect.hku.hk>
@@ -13,40 +13,50 @@ which is included as part of this source code package.
 #ifndef IMU_PROCESSING_H
 #define IMU_PROCESSING_H
 
-#include <Eigen/Eigen>
-#include "common_lib.h"
-#include <condition_variable>
-#include <nav_msgs/Odometry.h>
+// 修改: ROS2 头文件
 #include <utils/so3_math.h>
-#include <fstream>
-const bool time_list(PointType &x, PointType &y) { return (x.curvature < y.curvature); }
 
-/// *************IMU Process and undistortion
-class ImuProcess
-{
-public:
+#include <Eigen/Eigen>
+#include <condition_variable>
+#include <fstream>
+#include <nav_msgs/msg/odometry.hpp>
+#include <sensor_msgs/msg/imu.hpp>
+
+#include "common_lib.h"
+
+inline bool time_list(PointType& x, PointType& y) {
+  return (x.curvature < y.curvature);
+}
+
+class ImuProcess {
+ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   ImuProcess();
   ~ImuProcess();
 
   void Reset();
-  void Reset(double start_timestamp, const sensor_msgs::ImuConstPtr &lastimu);
-  void set_extrinsic(const V3D &transl, const M3D &rot);
-  void set_extrinsic(const V3D &transl);
+  void Reset(const StatesGroup& state, double start_timestamp);
+  // 修改: ROS2 Imu 消息指针
+  void Reset(double start_timestamp,
+             const sensor_msgs::msg::Imu::ConstSharedPtr& lastimu);
+  void set_extrinsic(const V3D& transl, const M3D& rot);
+  void set_extrinsic(const V3D& transl);
   void set_extrinsic(const MD(4, 4) & T);
-  void set_gyr_cov_scale(const V3D &scaler);
-  void set_acc_cov_scale(const V3D &scaler);
-  void set_gyr_bias_cov(const V3D &b_g);
-  void set_acc_bias_cov(const V3D &b_a);
-  void set_inv_expo_cov(const double &inv_expo);
-  void set_imu_init_frame_num(const int &num);
+  void set_gyr_cov_scale(const V3D& scaler);
+  void set_acc_cov_scale(const V3D& scaler);
+  void set_gyr_bias_cov(const V3D& b_g);
+  void set_acc_bias_cov(const V3D& b_a);
+  void set_inv_expo_cov(const double& inv_expo);
+  void set_imu_init_frame_num(const int& num);
   void disable_imu();
   void disable_gravity_est();
   void disable_bias_est();
   void disable_exposure_est();
-  void Process2(LidarMeasureGroup &lidar_meas, StatesGroup &stat, PointCloudXYZI::Ptr cur_pcl_un_);
-  void UndistortPcl(LidarMeasureGroup &lidar_meas, StatesGroup &state_inout, PointCloudXYZI &pcl_out);
+  void Process2(LidarMeasureGroup& lidar_meas, StatesGroup& stat,
+                PointCloudXYZI::Ptr cur_pcl_un_);
+  void UndistortPcl(LidarMeasureGroup& lidar_meas, StatesGroup& state_inout,
+                    PointCloudXYZI& pcl_out);
 
   ofstream fout_imu;
   double IMU_mean_acc_norm;
@@ -58,17 +68,18 @@ public:
   V3D cov_bias_acc;
   double cov_inv_expo;
   double first_lidar_time;
-  bool imu_time_init = false;
-  bool imu_need_init = true;
   M3D Eye3d;
   V3D Zero3d;
+  bool imu_need_init = true;
+  bool imu_time_init = false;
   int lidar_type;
 
-private:
-  void IMU_init(const MeasureGroup &meas, StatesGroup &state, int &N);
-  void Forward_without_imu(LidarMeasureGroup &meas, StatesGroup &state_inout, PointCloudXYZI &pcl_out);
+ private:
+  void IMU_init(const MeasureGroup& meas, StatesGroup& state, int& N);
+  void Forward_without_imu(LidarMeasureGroup& meas, StatesGroup& state_inout,
+                           PointCloudXYZI& pcl_out);
   PointCloudXYZI pcl_wait_proc;
-  sensor_msgs::ImuConstPtr last_imu;
+  sensor_msgs::msg::Imu::ConstSharedPtr last_imu;  // 修改为 ROS2 指针
   PointCloudXYZI::Ptr cur_pcl_un_;
   vector<Pose6D> IMUpose;
   M3D Lid_rot_to_IMU;

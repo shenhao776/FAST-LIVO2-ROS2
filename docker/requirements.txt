@@ -1,0 +1,7 @@
+paho-mqtt
+pyserial-asyncio
+pypcd
+rosbags
+pynput
+scipy 
+matplotlib
